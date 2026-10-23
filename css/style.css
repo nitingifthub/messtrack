@@ -3,43 +3,43 @@
    ========================================================================== */
 
 :root {
-  /* Color Palette - Vibrant Dark Mode (Default) */
-  --bg-primary: #0b0f19;
-  --bg-secondary: #131c2e;
-  --bg-card: #1e293b;
-  --bg-card-hover: #283548;
-  --bg-glass: rgba(30, 41, 59, 0.75);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(99, 102, 241, 0.5);
+  /* True OLED Black Color Palette (#000000 Pure Black) */
+  --bg-primary: #000000;
+  --bg-secondary: #08080a;
+  --bg-card: #0d0d12;
+  --bg-card-hover: #15151c;
+  --bg-glass: rgba(0, 0, 0, 0.90);
+  --border-color: rgba(255, 255, 255, 0.09);
+  --border-active: rgba(99, 102, 241, 0.7);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 
-  /* Accent Colors */
+  /* High-Contrast Neon Accents for OLED Displays */
   --primary: #6366f1;
   --primary-light: #818cf8;
   --primary-dark: #4f46e5;
-  --primary-glow: rgba(99, 102, 241, 0.25);
+  --primary-glow: rgba(99, 102, 241, 0.35);
 
-  --accent-breakfast: #f59e0b;
-  --accent-breakfast-bg: rgba(245, 158, 11, 0.15);
+  --accent-breakfast: #fbbf24;
+  --accent-breakfast-bg: rgba(251, 191, 36, 0.16);
   --accent-lunch: #10b981;
-  --accent-lunch-bg: rgba(16, 185, 129, 0.15);
-  --accent-snacks: #ec4899;
-  --accent-snacks-bg: rgba(236, 72, 153, 0.15);
-  --accent-dinner: #8b5cf6;
-  --accent-dinner-bg: rgba(139, 92, 246, 0.15);
+  --accent-lunch-bg: rgba(16, 185, 129, 0.16);
+  --accent-snacks: #f43f5e;
+  --accent-snacks-bg: rgba(244, 63, 94, 0.16);
+  --accent-dinner: #a855f7;
+  --accent-dinner-bg: rgba(168, 85, 247, 0.16);
 
   --status-success: #10b981;
-  --status-warning: #f59e0b;
+  --status-warning: #fbbf24;
   --status-danger: #ef4444;
-  --status-leave: #64748b;
+  --status-leave: #52525b;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 20px var(--primary-glow);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.95);
+  --shadow-glow: 0 0 24px var(--primary-glow);
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -51,6 +51,7 @@
   --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 
 /* Light Theme Variables */
 [data-theme="light"] {
@@ -925,13 +926,14 @@ html, body {
 
 /* Hero Bill Card */
 .bill-hero-card {
-  background: linear-gradient(135deg, #4338ca, #6366f1, #7c3aed);
+  background: linear-gradient(145deg, #15102e 0%, #0e0d1c 50%, #070710 100%);
+  border: 1px solid rgba(129, 140, 248, 0.4);
   border-radius: var(--radius-lg);
   padding: 22px 20px;
   color: #ffffff;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.25), 0 10px 25px rgba(0, 0, 0, 0.95);
   margin-bottom: 16px;
 }
 
