@@ -1562,3 +1562,18 @@ html, body {
     border: none;
   }
 }
+
+/* ==========================================================================
+   Clean UI: Remove any injected Netlify badges, watermarks, or drawers
+   ========================================================================== */
+[class*="netlify"], 
+[id*="netlify"], 
+iframe[src*="netlify"], 
+div[data-netlify-deploy-id], 
+div[data-netlify-drawer],
+.netlify-badge {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
