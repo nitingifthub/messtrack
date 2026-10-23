@@ -38,6 +38,7 @@ const MessApp = {
     this.initTodayView();
     this.setupWeekStrip();
     this.setupSettingsView();
+    this.updateAutoSaveIndicator();
 
     // Initialize calendar
     if (window.MessCalendar) {
@@ -87,9 +88,40 @@ const MessApp = {
   saveRecords() {
     try {
       localStorage.setItem('messtrack_records', JSON.stringify(this.records));
+      this.updateAutoSaveIndicator();
+      this.saveToOPFS();
     } catch (e) {
       console.error('Error saving records', e);
     }
+  },
+
+  async saveToOPFS() {
+    if (navigator.storage && navigator.storage.getDirectory) {
+      try {
+        const root = await navigator.storage.getDirectory();
+        const fileHandle = await root.getFileHandle('messtrack_records.json', { create: true });
+        const writable = await fileHandle.createWritable();
+        const data = {
+          version: '1.0',
+          appName: 'MessTrack',
+          updatedAt: new Date().toISOString(),
+          settings: this.settings,
+          records: this.records
+        };
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+      } catch (e) {
+        // Silently continue if OPFS is not permitted
+      }
+    }
+  },
+
+  updateAutoSaveIndicator() {
+    const textEl = document.getElementById('auto-save-text');
+    if (!textEl) return;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    textEl.textContent = `Auto-saved to phone (${timeStr})`;
   },
 
   /* ------------------- Date Utilities ------------------- */
