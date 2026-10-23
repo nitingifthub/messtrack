@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <linearGradient id="foodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.28" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle for modern Android adaptive icon -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Inner glow circle -->
+  <circle cx="256" cy="256" r="190" fill="white" opacity="0.08" />
+
+  <!-- Main Plate -->
+  <g filter="url(#shadow)">
+    <!-- Plate outer rim -->
+    <circle cx="256" cy="265" r="150" fill="url(#plateGrad)" stroke="#cbd5e1" stroke-width="6" />
+    <!-- Plate inner rim -->
+    <circle cx="256" cy="265" r="122" fill="#f8fafc" stroke="#e2e8f0" stroke-width="4" />
+    
+    <!-- Food Thali Compartments / Dish Elements -->
+    <!-- Center Bowl (Rice/Roti) -->
+    <circle cx="256" cy="265" r="48" fill="#fef3c7" stroke="#fde68a" stroke-width="3" />
+    <circle cx="256" cy="265" r="40" fill="#fde68a" opacity="0.6" />
+    <path d="M 235 255 Q 256 242 277 255 Q 256 268 235 255 Z" fill="#d97706" opacity="0.5" />
+    <path d="M 240 270 Q 256 260 272 270 Q 256 280 240 270 Z" fill="#d97706" opacity="0.5" />
+
+    <!-- Top Bowl (Curry) -->
+    <circle cx="256" cy="188" r="32" fill="url(#foodGrad)" stroke="#c2410c" stroke-width="2" />
+    <circle cx="256" cy="188" r="24" fill="#fb923c" opacity="0.5" />
+    
+    <!-- Left Bowl (Salad / Veggies) -->
+    <circle cx="185" cy="245" r="30" fill="url(#greenGrad)" stroke="#047857" stroke-width="2" />
+    <circle cx="185" cy="245" r="22" fill="#34d399" opacity="0.5" />
+
+    <!-- Right Bowl (Dal / Dessert) -->
+    <circle cx="327" cy="245" r="30" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+    <circle cx="327" cy="245" r="22" fill="#fef08a" opacity="0.5" />
+    
+    <!-- Bottom Cutlery Accent: Spoon & Fork crossing or Checkmark badge -->
+  </g>
+
+  <!-- Success Checkmark Badge indicating recording / tracking -->
+  <g filter="url(#shadow)">
+    <circle cx="365" cy="365" r="50" fill="#10b981" stroke="#ffffff" stroke-width="6" />
+    <path d="M 345 365 L 358 378 L 388 348" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>
