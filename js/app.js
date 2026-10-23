@@ -97,9 +97,63 @@ const MessApp = {
       localStorage.setItem('messtrack_records', JSON.stringify(this.records));
       this.updateAutoSaveIndicator();
       this.saveToOPFS();
+      this.saveToLinkedFolder();
     } catch (e) {
       console.error('Error saving records', e);
     }
+  },
+
+  async saveToLinkedFolder() {
+    try {
+      const handle = await this.getStoredDirectoryHandle();
+      if (!handle) return;
+      const permission = await handle.queryPermission({ mode: 'readwrite' });
+      if (permission === 'granted' || (await handle.requestPermission({ mode: 'readwrite' })) === 'granted') {
+        const fileHandle = await handle.getFileHandle('messtrack_backup.json', { create: true });
+        const writable = await fileHandle.createWritable();
+        const data = {
+          version: '1.0',
+          appName: 'MessTrack',
+          lastAutoSaved: new Date().toISOString(),
+          settings: this.settings,
+          records: this.records
+        };
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+      }
+    } catch (e) {
+      console.log('Linked folder write skipped:', e);
+    }
+  },
+
+  async getStoredDirectoryHandle() {
+    return new Promise((resolve) => {
+      const req = indexedDB.open('messtrack_fs', 1);
+      req.onupgradeneeded = (e) => e.target.result.createObjectStore('handles');
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('handles', 'readonly');
+        const getReq = tx.objectStore('handles').get('backup_dir');
+        getReq.onsuccess = () => resolve(getReq.result || null);
+        getReq.onerror = () => resolve(null);
+      };
+      req.onerror = () => resolve(null);
+    });
+  },
+
+  async storeDirectoryHandle(handle) {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('messtrack_fs', 1);
+      req.onupgradeneeded = (e) => e.target.result.createObjectStore('handles');
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(handle, 'backup_dir');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
   },
 
   async saveToOPFS() {
@@ -767,6 +821,45 @@ const MessApp = {
 
         this.loadDayRecord(this.currentDateKey);
         this.showToast('Settings saved successfully!', 'success');
+      });
+    }
+
+    // Connect / Select Dedicated Folder
+    const btnSelectFolder = document.getElementById('btn-select-folder');
+    const folderNameLabel = document.getElementById('linked-folder-name');
+
+    const updateFolderDisplay = async () => {
+      const handle = await this.getStoredDirectoryHandle();
+      if (handle && folderNameLabel) {
+        folderNameLabel.textContent = `📁 ${handle.name} (Auto-saving)`;
+        folderNameLabel.style.color = '#10b981';
+      } else if (folderNameLabel) {
+        folderNameLabel.textContent = 'Not connected';
+        folderNameLabel.style.color = 'var(--text-muted)';
+      }
+    };
+    updateFolderDisplay();
+
+    if (btnSelectFolder) {
+      btnSelectFolder.addEventListener('click', async () => {
+        if ('showDirectoryPicker' in window) {
+          try {
+            const handle = await window.showDirectoryPicker({
+              mode: 'readwrite',
+              startIn: 'documents'
+            });
+            await this.storeDirectoryHandle(handle);
+            await updateFolderDisplay();
+            await this.saveToLinkedFolder();
+            this.showToast(`Connected to ${handle.name}! Auto-saving enabled 📁`, 'success');
+          } catch (err) {
+            if (err.name !== 'AbortError') {
+              alert('Could not link folder. You can use "Save Backup Now" instead.');
+            }
+          }
+        } else {
+          alert('Your browser does not support folder-level linking. Use "Save Backup Now" to save directly into your phone folder!');
+        }
       });
     }
 

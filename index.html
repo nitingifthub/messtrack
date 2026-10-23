@@ -515,21 +515,32 @@
         </button>
       </div>
 
-      <!-- Save to Phone Storage & Restore -->
+      <!-- Dedicated Folder Backup -->
       <div class="settings-section-card">
         <div class="settings-card-title">
-          <span>📁 Save to Phone Storage (Folder)</span>
+          <span>📁 Dedicated MessTrack Folder</span>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
-          Saves a copy of all your meal history directly into your phone's internal storage (in your <strong>Downloads</strong> or <strong>Documents</strong> folder). You can view or move this file using your phone's <em>My Files</em> or <em>Files</em> app.
+          Connect a dedicated folder (such as <strong>Documents ➔ MessTrack</strong>). Once linked, the app will automatically save your backup file directly into this folder every time you update your meals—completely separate from Downloads!
         </p>
         
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Dedicated Folder:</span>
+            <strong id="linked-folder-name" style="color: var(--primary-light);">Not connected</strong>
+          </div>
+        </div>
+
+        <button id="btn-select-folder" class="btn-secondary" style="width: 100%; background: linear-gradient(135deg, var(--primary), #8b5cf6); color: #fff; border: none; margin-bottom: 12px; font-weight: 700;">
+          <span>📁 Select or Create MessTrack Folder</span>
+        </button>
+
         <div class="data-actions-row" style="margin-bottom: 10px;">
-          <button id="btn-export-data" class="btn-secondary" style="background: var(--primary-glow); border-color: var(--border-active);">
-            <span>📁 Save to Phone Storage</span>
+          <button id="btn-export-data" class="btn-secondary">
+            <span>💾 Save Backup Now</span>
           </button>
           <button id="btn-import-data" class="btn-secondary">
-            <span>📂 Open Saved File</span>
+            <span>📂 Open / Restore File</span>
           </button>
           <input type="file" id="input-import-file" accept=".json" style="display: none;">
         </div>
