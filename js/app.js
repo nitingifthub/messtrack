@@ -7,15 +7,12 @@ const DEFAULT_SETTINGS = {
   userName: 'Nitin',
   roomNo: 'Room 204',
   currency: '₹',
-  billingModel: 'per_meal', // 'per_meal' or 'fixed_monthly'
   mealRates: {
     breakfast: 30,
     lunch: 60,
     snacks: 25,
     dinner: 65
   },
-  fixedMonthlyFee: 3500,
-  dailyLeaveRebate: 100,
   theme: 'dark'
 };
 
@@ -769,9 +766,6 @@ const MessApp = {
     const inRateS = document.getElementById('set-rate-s');
     const inRateD = document.getElementById('set-rate-d');
 
-    const inFixedFee = document.getElementById('set-fixed-fee');
-    const inLeaveRebate = document.getElementById('set-leave-rebate');
-
     if (inMessName) inMessName.value = this.settings.messName || '';
     if (inUserName) inUserName.value = this.settings.userName || '';
     if (inRoomNo) inRoomNo.value = this.settings.roomNo || '';
@@ -781,20 +775,6 @@ const MessApp = {
     if (inRateL) inRateL.value = this.settings.mealRates.lunch;
     if (inRateS) inRateS.value = this.settings.mealRates.snacks;
     if (inRateD) inRateD.value = this.settings.mealRates.dinner;
-
-    if (inFixedFee) inFixedFee.value = this.settings.fixedMonthlyFee || 3500;
-    if (inLeaveRebate) inLeaveRebate.value = this.settings.dailyLeaveRebate || 100;
-
-    // Billing model cards
-    const modelCards = document.querySelectorAll('.radio-card[data-model]');
-    modelCards.forEach(card => {
-      card.classList.toggle('active', card.dataset.model === this.settings.billingModel);
-      card.addEventListener('click', () => {
-        modelCards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        this.settings.billingModel = card.dataset.model;
-      });
-    });
 
     // Save button
     const btnSave = document.getElementById('btn-save-settings');
@@ -809,9 +789,6 @@ const MessApp = {
         this.settings.mealRates.lunch = Number(inRateL.value) || 0;
         this.settings.mealRates.snacks = Number(inRateS.value) || 0;
         this.settings.mealRates.dinner = Number(inRateD.value) || 0;
-
-        this.settings.fixedMonthlyFee = Number(inFixedFee.value) || 3500;
-        this.settings.dailyLeaveRebate = Number(inLeaveRebate.value) || 100;
 
         this.saveSettings();
 

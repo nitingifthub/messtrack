@@ -88,21 +88,7 @@ const MessStats = {
     const dinnerCost = dinnerCount * (rates.dinner || 0);
     const totalMealsCost = breakfastCost + lunchCost + snacksCost + dinnerCost;
     const totalMealsCount = breakfastCount + lunchCount + snacksCount + dinnerCount;
-
-    let totalPayable = 0;
-    let rebateAmount = 0;
-    const model = settings.billingModel || 'per_meal';
-
-    if (model === 'fixed_monthly') {
-      const baseFee = Number(settings.fixedMonthlyFee) || 3500;
-      const rebateRate = Number(settings.dailyLeaveRebate) || 100;
-      rebateAmount = leaveDaysCount * rebateRate;
-      totalPayable = Math.max(0, baseFee - rebateAmount) + totalExtraCharges;
-    } else {
-      // Per meal billing
-      totalPayable = totalMealsCost + totalExtraCharges;
-    }
-
+    const totalPayable = totalMealsCost + totalExtraCharges;
     const attendancePct = daysInMonth > 0 ? Math.round((daysWithMeals / daysInMonth) * 100) : 0;
 
     return {
@@ -122,11 +108,9 @@ const MessStats = {
       leaveDaysCount,
       daysWithMeals,
       totalExtraCharges,
-      rebateAmount,
       totalPayable,
       attendancePct,
-      attendedDays,
-      billingModel: model
+      attendedDays
     };
   },
 
@@ -141,44 +125,28 @@ const MessStats = {
     const monthName = monthNames[stats.month - 1];
     const curr = settings.currency || '₹';
 
-    let billingRows = '';
-    if (stats.billingModel === 'fixed_monthly') {
-      billingRows = `
-        <tr>
-          <td>Fixed Monthly Fee</td>
-          <td>1 Month</td>
-          <td>${curr}${settings.fixedMonthlyFee || 3500}</td>
-        </tr>
-        <tr>
-          <td>Leave Rebate (${stats.leaveDaysCount} days @ ${curr}${settings.dailyLeaveRebate}/day)</td>
-          <td>-${stats.leaveDaysCount} days</td>
-          <td style="color:#dc2626;">-${curr}${stats.rebateAmount}</td>
-        </tr>
-      `;
-    } else {
-      billingRows = `
-        <tr>
-          <td>Breakfast (${curr}${settings.mealRates.breakfast} ea)</td>
-          <td>${stats.breakfastCount}</td>
-          <td>${curr}${stats.breakfastCost}</td>
-        </tr>
-        <tr>
-          <td>Lunch (${curr}${settings.mealRates.lunch} ea)</td>
-          <td>${stats.lunchCount}</td>
-          <td>${curr}${stats.lunchCost}</td>
-        </tr>
-        <tr>
-          <td>Snacks (${curr}${settings.mealRates.snacks} ea)</td>
-          <td>${stats.snacksCount}</td>
-          <td>${curr}${stats.snacksCost}</td>
-        </tr>
-        <tr>
-          <td>Dinner (${curr}${settings.mealRates.dinner} ea)</td>
-          <td>${stats.dinnerCount}</td>
-          <td>${curr}${stats.dinnerCost}</td>
-        </tr>
-      `;
-    }
+    let billingRows = `
+      <tr>
+        <td>Breakfast (${curr}${settings.mealRates.breakfast} ea)</td>
+        <td>${stats.breakfastCount}</td>
+        <td>${curr}${stats.breakfastCost}</td>
+      </tr>
+      <tr>
+        <td>Lunch (${curr}${settings.mealRates.lunch} ea)</td>
+        <td>${stats.lunchCount}</td>
+        <td>${curr}${stats.lunchCost}</td>
+      </tr>
+      <tr>
+        <td>Snacks (${curr}${settings.mealRates.snacks} ea)</td>
+        <td>${stats.snacksCount}</td>
+        <td>${curr}${stats.snacksCost}</td>
+      </tr>
+      <tr>
+        <td>Dinner (${curr}${settings.mealRates.dinner} ea)</td>
+        <td>${stats.dinnerCount}</td>
+        <td>${curr}${stats.dinnerCost}</td>
+      </tr>
+    `;
 
     if (stats.totalExtraCharges > 0) {
       billingRows += `
