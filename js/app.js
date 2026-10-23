@@ -51,6 +51,13 @@ const MessApp = {
         .then(() => console.log('MessTrack ServiceWorker registered'))
         .catch(err => console.log('ServiceWorker registration error:', err));
     }
+
+    // Request persistent storage protection against system cleanups
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(isPersisted => {
+        console.log('MessTrack Persistent Storage status:', isPersisted);
+      });
+    }
   },
 
   /* ------------------- Data Persistence ------------------- */
