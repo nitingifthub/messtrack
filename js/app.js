@@ -731,26 +731,51 @@ const MessApp = {
       });
     }
 
-    // Export Data (JSON)
+    // Save / Export Data to Phone Storage
     const btnExport = document.getElementById('btn-export-data');
     if (btnExport) {
-      btnExport.addEventListener('click', () => {
+      btnExport.addEventListener('click', async () => {
         const backup = {
           version: '1.0',
+          appName: 'MessTrack',
           exportedAt: new Date().toISOString(),
           settings: this.settings,
           records: this.records
         };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const jsonContent = JSON.stringify(backup, null, 2);
+        const fileName = `messtrack_backup_${this.formatDateKey(new Date())}.json`;
+
+        // Modern File System Access API (lets user pick specific folder if supported)
+        if ('showSaveFilePicker' in window) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: fileName,
+              types: [{
+                description: 'JSON Backup File',
+                accept: { 'application/json': ['.json'] }
+              }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(jsonContent);
+            await writable.close();
+            this.showToast('Saved directly to chosen phone folder! 📁', 'success');
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return; // User cancelled picker
+          }
+        }
+
+        // Standard direct download to phone's Downloads folder
+        const blob = new Blob([jsonContent], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `messtrack_backup_${this.formatDateKey(new Date())}.json`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        this.showToast('Backup file downloaded!', 'success');
+        this.showToast('Saved to phone storage! (Check Downloads folder) 📁', 'success');
       });
     }
 

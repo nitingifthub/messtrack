@@ -509,18 +509,21 @@
         </button>
       </div>
 
-      <!-- Backup, Restore & Reset -->
+      <!-- Save to Phone Storage & Restore -->
       <div class="settings-section-card">
         <div class="settings-card-title">
-          <span>💾 Data Backup & Reset</span>
+          <span>📁 Save to Phone Storage (Folder)</span>
         </div>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
+          Saves a copy of all your meal history directly into your phone's internal storage (in your <strong>Downloads</strong> or <strong>Documents</strong> folder). You can view or move this file using your phone's <em>My Files</em> or <em>Files</em> app.
+        </p>
         
         <div class="data-actions-row" style="margin-bottom: 10px;">
-          <button id="btn-export-data" class="btn-secondary">
-            <span>📥 Export JSON</span>
+          <button id="btn-export-data" class="btn-secondary" style="background: var(--primary-glow); border-color: var(--border-active);">
+            <span>📁 Save to Phone Storage</span>
           </button>
           <button id="btn-import-data" class="btn-secondary">
-            <span>📤 Import JSON</span>
+            <span>📂 Open Saved File</span>
           </button>
           <input type="file" id="input-import-file" accept=".json" style="display: none;">
         </div>
