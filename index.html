@@ -217,7 +217,7 @@
         <div class="extras-body">
           <div class="input-group">
             <label for="today-extra-charge">Extra / Guest Charges (₹)</label>
-            <input type="number" id="today-extra-charge" class="styled-input" placeholder="0 (e.g. 50 for guest or sweet)">
+            <input type="number" id="today-extra-charge" class="styled-input" placeholder="0 (e.g. 50 for guest or sweet)" min="0">
           </div>
           <div class="input-group">
             <label for="today-daily-note">Daily Note / Menu Item</label>
@@ -313,6 +313,16 @@
          ==================================================================== -->
     <section id="view-analytics" class="view-section">
       
+      <!-- Analytics Month Navigation Selector -->
+      <div class="calendar-header-card" style="margin-bottom: 14px;">
+        <div class="calendar-month-selector">
+          <button id="analytics-prev-month" class="btn-cal-nav" title="Previous Month">❮</button>
+          <h2 id="analytics-month-title" class="calendar-current-month">October 2026</h2>
+          <button id="analytics-next-month" class="btn-cal-nav" title="Next Month">❯</button>
+        </div>
+        <button id="analytics-btn-today" class="btn-cal-today" title="Jump to Current Month">This Month</button>
+      </div>
+
       <!-- Hero Monthly Bill Card -->
       <div class="bill-hero-card">
         <div class="bill-hero-top">
@@ -452,21 +462,21 @@
         <div class="two-col-grid">
           <div class="input-group">
             <label for="set-rate-b">🍳 Breakfast</label>
-            <input type="number" id="set-rate-b" class="styled-input" value="30">
+            <input type="number" id="set-rate-b" class="styled-input" value="30" min="0">
           </div>
           <div class="input-group">
             <label for="set-rate-l">🍛 Lunch</label>
-            <input type="number" id="set-rate-l" class="styled-input" value="60">
+            <input type="number" id="set-rate-l" class="styled-input" value="60" min="0">
           </div>
         </div>
         <div class="two-col-grid" style="margin-top: 10px;">
           <div class="input-group">
             <label for="set-rate-s">☕ Snacks</label>
-            <input type="number" id="set-rate-s" class="styled-input" value="25">
+            <input type="number" id="set-rate-s" class="styled-input" value="25" min="0">
           </div>
           <div class="input-group">
             <label for="set-rate-d">🍲 Dinner</label>
-            <input type="number" id="set-rate-d" class="styled-input" value="65">
+            <input type="number" id="set-rate-d" class="styled-input" value="65" min="0">
           </div>
         </div>
 
@@ -617,7 +627,7 @@
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
         <div class="input-group">
           <label for="modal-input-extra">Extra Charges (₹)</label>
-          <input type="number" id="modal-input-extra" class="styled-input" placeholder="0">
+          <input type="number" id="modal-input-extra" class="styled-input" placeholder="0" min="0">
         </div>
         <div class="input-group">
           <label for="modal-input-note">Note / Dish Name</label>

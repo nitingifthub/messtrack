@@ -4,6 +4,19 @@
 
 const MessStats = {
   /**
+   * Helper to escape HTML characters in user text
+   */
+  escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  /**
    * Calculates monthly financial and attendance statistics
    * @param {number} year - YYYY
    * @param {number} month - 1-12
@@ -13,6 +26,7 @@ const MessStats = {
   calculateMonthlyStats(year, month, records, settings) {
     const daysInMonth = new Date(year, month, 0).getDate();
     const prefix = `${year}-${String(month).padStart(2, '0')}`;
+    const rates = (settings && settings.mealRates) || { breakfast: 30, lunch: 60, snacks: 25, dinner: 65 };
 
     let breakfastCount = 0;
     let lunchCount = 0;
@@ -30,11 +44,30 @@ const MessStats = {
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateKey = `${prefix}-${String(d).padStart(2, '0')}`;
-      const rec = records[dateKey];
+      const rec = records ? records[dateKey] : null;
 
       if (rec) {
+        const extra = (!isNaN(Number(rec.extraCharge))) ? Math.max(0, Number(rec.extraCharge)) : 0;
+        if (extra > 0) {
+          totalExtraCharges += extra;
+        }
+
         if (rec.isLeave) {
           leaveDaysCount++;
+          // If a day was on leave but had an extra charge (e.g. snack/guest charge), still list in itemized log
+          if (extra > 0) {
+            const dateObj = new Date(year, month - 1, d);
+            const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+            attendedDays.push({
+              day: d,
+              dateStr: `${String(d).padStart(2, '0')} ${monthNamesShort[month - 1]} (${dayOfWeek})`,
+              meals: [],
+              mealsText: 'Extra / Guest charge (Leave)',
+              cost: extra,
+              extraCharge: extra,
+              note: rec.note ? rec.note.trim() : ''
+            });
+          }
         } else {
           const meals = [];
           let dayMealCost = 0;
@@ -59,29 +92,26 @@ const MessStats = {
             dayMealCost += (rates.dinner || 0);
           }
 
-          if (meals.length > 0) {
-            daysWithMeals++;
-            const extra = (!isNaN(Number(rec.extraCharge))) ? Number(rec.extraCharge) : 0;
+          if (meals.length > 0 || extra > 0) {
+            if (meals.length > 0) {
+              daysWithMeals++;
+            }
             const dateObj = new Date(year, month - 1, d);
             const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
             attendedDays.push({
               day: d,
               dateStr: `${String(d).padStart(2, '0')} ${monthNamesShort[month - 1]} (${dayOfWeek})`,
               meals: meals,
-              mealsText: meals.join(', '),
+              mealsText: meals.length > 0 ? meals.join(', ') : 'Extra charges only',
               cost: dayMealCost + extra,
               extraCharge: extra,
               note: rec.note ? rec.note.trim() : ''
             });
           }
         }
-        if (rec.extraCharge && !isNaN(Number(rec.extraCharge))) {
-          totalExtraCharges += Number(rec.extraCharge);
-        }
       }
     }
 
-    const rates = settings.mealRates || { breakfast: 30, lunch: 60, snacks: 25, dinner: 65 };
     const breakfastCost = breakfastCount * (rates.breakfast || 0);
     const lunchCost = lunchCount * (rates.lunch || 0);
     const snacksCost = snacksCount * (rates.snacks || 0);
@@ -123,26 +153,31 @@ const MessStats = {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     const monthName = monthNames[stats.month - 1];
-    const curr = settings.currency || '₹';
+    const curr = (settings && settings.currency) || '₹';
+    const rates = (settings && settings.mealRates) || { breakfast: 30, lunch: 60, snacks: 25, dinner: 65 };
+
+    const safeMessName = this.escapeHTML((settings && settings.messName) || 'Hostel Mess');
+    const safeUserName = this.escapeHTML((settings && settings.userName) || 'Student');
+    const safeRoomNo = this.escapeHTML((settings && settings.roomNo) || 'N/A');
 
     let billingRows = `
       <tr>
-        <td>Breakfast (${curr}${settings.mealRates.breakfast} ea)</td>
+        <td>Breakfast (${curr}${rates.breakfast || 0} ea)</td>
         <td>${stats.breakfastCount}</td>
         <td>${curr}${stats.breakfastCost}</td>
       </tr>
       <tr>
-        <td>Lunch (${curr}${settings.mealRates.lunch} ea)</td>
+        <td>Lunch (${curr}${rates.lunch || 0} ea)</td>
         <td>${stats.lunchCount}</td>
         <td>${curr}${stats.lunchCost}</td>
       </tr>
       <tr>
-        <td>Snacks (${curr}${settings.mealRates.snacks} ea)</td>
+        <td>Snacks (${curr}${rates.snacks || 0} ea)</td>
         <td>${stats.snacksCount}</td>
         <td>${curr}${stats.snacksCost}</td>
       </tr>
       <tr>
-        <td>Dinner (${curr}${settings.mealRates.dinner} ea)</td>
+        <td>Dinner (${curr}${rates.dinner || 0} ea)</td>
         <td>${stats.dinnerCount}</td>
         <td>${curr}${stats.dinnerCost}</td>
       </tr>
@@ -158,15 +193,15 @@ const MessStats = {
       `;
     }
 
-    // Daily breakdown for ONLY the days food was eaten
+    // Daily breakdown for ONLY the days food was eaten or extra charges incurred
     let dailyEatenRows = '';
     if (stats.attendedDays && stats.attendedDays.length > 0) {
       dailyEatenRows = stats.attendedDays.map(item => `
         <tr>
-          <td><strong>${item.dateStr}</strong></td>
+          <td><strong>${this.escapeHTML(item.dateStr)}</strong></td>
           <td>
-            ${item.mealsText}
-            ${item.note ? `<div style="font-size: 10px; color: #64748b; margin-top: 1px;"><em>Note: ${item.note}</em></div>` : ''}
+            ${this.escapeHTML(item.mealsText)}
+            ${item.note ? `<div style="font-size: 10px; color: #64748b; margin-top: 1px;"><em>Note: ${this.escapeHTML(item.note)}</em></div>` : ''}
           </td>
           <td style="text-align: right; font-weight: 600;">${curr}${item.cost}</td>
         </tr>
@@ -182,14 +217,14 @@ const MessStats = {
     return `
       <div class="mess-slip-paper" id="printable-slip">
         <div class="slip-header">
-          <h3>${settings.messName || 'Hostel / Mess'}</h3>
+          <h3>${safeMessName}</h3>
           <p>Monthly Meal Statement & Bill</p>
           <p style="font-size:11px; margin-top:2px;">Month: <strong>${monthName} ${stats.year}</strong></p>
         </div>
 
         <div class="slip-info-row">
-          <span><strong>Student:</strong> ${settings.userName || 'Student'}</span>
-          <span><strong>Room / Roll:</strong> ${settings.roomNo || 'N/A'}</span>
+          <span><strong>Student:</strong> ${safeUserName}</span>
+          <span><strong>Room / Roll:</strong> ${safeRoomNo}</span>
         </div>
         <div class="slip-info-row">
           <span><strong>Days In Month:</strong> ${stats.daysInMonth}</span>
@@ -220,7 +255,7 @@ const MessStats = {
         <div style="margin-top: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; border-bottom: 1px solid #94a3b8; padding-bottom: 3px;">
             <strong style="font-size: 11px; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">
-              Itemized Food Log (Only Days Eaten - ${stats.daysWithMeals} Days)
+              Itemized Food Log (Only Days Eaten - ${stats.attendedDays.length} Records)
             </strong>
           </div>
 

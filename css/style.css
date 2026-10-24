@@ -1563,19 +1563,56 @@ html, body {
 
 /* Print Styles for Mess Slip */
 @media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
   body * {
     visibility: hidden;
   }
-  .mess-slip-paper, .mess-slip-paper * {
+  #slip-modal,
+  #slip-modal .modal-sheet,
+  #slip-container,
+  .mess-slip-paper,
+  .mess-slip-paper * {
     visibility: visible;
   }
+  #slip-modal {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  #slip-modal .modal-sheet {
+    position: static !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  .sheet-drag-handle,
+  .sheet-header,
+  #slip-modal .modal-sheet > div:last-child {
+    display: none !important;
+  }
   .mess-slip-paper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-shadow: none;
-    border: none;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 10px !important;
+    margin: 0 !important;
   }
 }
 

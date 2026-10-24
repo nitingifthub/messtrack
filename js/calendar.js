@@ -193,7 +193,7 @@ const MessCalendar = {
     };
 
     const modalTitle = document.getElementById('modal-day-title');
-    const dateObj = new Date(dateKey + 'T00:00:00');
+    const dateObj = window.MessApp ? window.MessApp.parseDateKey(dateKey) : new Date(dateKey + 'T00:00:00');
     const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     if (modalTitle) modalTitle.textContent = dayName;
 
@@ -215,7 +215,7 @@ const MessCalendar = {
     if (inputNote) inputNote.value = rec.note || '';
 
     // Handle leave disable toggle
-    this.updateModalMealDisableState(chkLeave.checked);
+    this.updateModalMealDisableState(chkLeave ? chkLeave.checked : false);
 
     modal.classList.add('show');
   },
@@ -223,9 +223,11 @@ const MessCalendar = {
   updateModalMealDisableState(isLeave) {
     const mealToggles = document.querySelectorAll('.modal-meal-row');
     mealToggles.forEach(row => {
+      const checkbox = row.querySelector('input[type="checkbox"]');
       if (isLeave) {
         row.style.opacity = '0.4';
         row.style.pointerEvents = 'none';
+        if (checkbox) checkbox.checked = false;
       } else {
         row.style.opacity = '1';
         row.style.pointerEvents = 'auto';
@@ -253,7 +255,7 @@ const MessCalendar = {
       snacks: isLeave ? false : (chkS ? chkS.checked : false),
       dinner: isLeave ? false : (chkD ? chkD.checked : false),
       isLeave: isLeave,
-      extraCharge: inputExtra ? (Number(inputExtra.value) || 0) : 0,
+      extraCharge: inputExtra ? Math.max(0, Number(inputExtra.value) || 0) : 0,
       note: inputNote ? inputNote.value.trim() : ''
     };
 
@@ -264,6 +266,12 @@ const MessCalendar = {
     // If edited date is current selected date on Today screen, update that screen too
     if (window.MessApp.currentDateKey === this.selectedDate) {
       window.MessApp.loadDayRecord(this.selectedDate);
+      window.MessApp.setupWeekStrip();
+    }
+
+    // Refresh analytics view if active
+    if (window.MessApp.activeTab === 'analytics') {
+      window.MessApp.updateAnalyticsView();
     }
 
     window.MessApp.showToast('Day updated successfully!', 'success');

@@ -23,6 +23,8 @@ const MessApp = {
   currentDateKey: '',
   activeTab: 'today',
   deferredInstallPrompt: null,
+  analyticsYear: new Date().getFullYear(),
+  analyticsMonth: new Date().getMonth() + 1,
 
   init() {
     this.loadSettings();
@@ -55,6 +57,12 @@ const MessApp = {
         console.log('MessTrack Persistent Storage status:', isPersisted);
       });
     }
+
+    // Handle initial hash tab if provided
+    const initialHash = window.location.hash.replace('#', '');
+    if (['today', 'calendar', 'analytics', 'settings'].includes(initialHash)) {
+      this.switchTab(initialHash, false);
+    }
   },
 
   /* ------------------- Data Persistence ------------------- */
@@ -83,9 +91,13 @@ const MessApp = {
       this.records = {};
     }
 
-    // If records are empty, pre-populate demo data for the current month so the app looks alive
-    if (Object.keys(this.records).length === 0) {
-      this.generateSampleData(false);
+    // Only auto-generate sample data once on initial first install
+    const hasInitialized = localStorage.getItem('messtrack_initialized');
+    if (!hasInitialized) {
+      if (Object.keys(this.records).length === 0) {
+        this.generateSampleData(false);
+      }
+      localStorage.setItem('messtrack_initialized', 'true');
     }
   },
 
@@ -262,6 +274,8 @@ const MessApp = {
       jumpTodayBtn.addEventListener('click', () => {
         this.currentDate = new Date();
         this.currentDateKey = this.formatDateKey(this.currentDate);
+        this.analyticsYear = this.currentDate.getFullYear();
+        this.analyticsMonth = this.currentDate.getMonth() + 1;
         this.switchTab('today');
         this.loadDayRecord(this.currentDateKey);
         this.setupWeekStrip();
@@ -276,8 +290,9 @@ const MessApp = {
     navItems.forEach(item => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
-        const tab = item.dataset.tab;
-        this.switchTab(tab);
+        const navEl = e.target.closest('.nav-item') || item;
+        const tab = (navEl && navEl.dataset.tab) || item.dataset.tab;
+        if (tab) this.switchTab(tab);
       });
     });
 
@@ -286,6 +301,15 @@ const MessApp = {
     if (btnCloseModal) {
       btnCloseModal.addEventListener('click', () => {
         if (window.MessCalendar) window.MessCalendar.closeModal();
+      });
+    }
+
+    const dayModal = document.getElementById('day-modal');
+    if (dayModal) {
+      dayModal.addEventListener('click', (e) => {
+        if (e.target === dayModal && window.MessCalendar) {
+          window.MessCalendar.closeModal();
+        }
       });
     }
 
@@ -311,10 +335,67 @@ const MessApp = {
         document.getElementById('slip-modal').classList.remove('show');
       });
     }
+
+    const slipModal = document.getElementById('slip-modal');
+    if (slipModal) {
+      slipModal.addEventListener('click', (e) => {
+        if (e.target === slipModal) {
+          slipModal.classList.remove('show');
+        }
+      });
+    }
+
+    // Analytics Month Navigation
+    const btnAnalyticsPrev = document.getElementById('analytics-prev-month');
+    const btnAnalyticsNext = document.getElementById('analytics-next-month');
+    const btnAnalyticsToday = document.getElementById('analytics-btn-today');
+
+    if (btnAnalyticsPrev) {
+      btnAnalyticsPrev.addEventListener('click', () => {
+        this.analyticsMonth--;
+        if (this.analyticsMonth < 1) {
+          this.analyticsMonth = 12;
+          this.analyticsYear--;
+        }
+        this.updateAnalyticsView();
+      });
+    }
+
+    if (btnAnalyticsNext) {
+      btnAnalyticsNext.addEventListener('click', () => {
+        this.analyticsMonth++;
+        if (this.analyticsMonth > 12) {
+          this.analyticsMonth = 1;
+          this.analyticsYear++;
+        }
+        this.updateAnalyticsView();
+      });
+    }
+
+    if (btnAnalyticsToday) {
+      btnAnalyticsToday.addEventListener('click', () => {
+        const now = new Date();
+        this.analyticsYear = now.getFullYear();
+        this.analyticsMonth = now.getMonth() + 1;
+        this.updateAnalyticsView();
+      });
+    }
+
+    // Listen for hash changes (e.g. #calendar, #analytics, #settings)
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '') || 'today';
+      if (['today', 'calendar', 'analytics', 'settings'].includes(hash) && this.activeTab !== hash) {
+        this.switchTab(hash, false);
+      }
+    });
   },
 
-  switchTab(tabName) {
+  switchTab(tabName, updateHash = true) {
     this.activeTab = tabName;
+
+    if (updateHash && window.location.hash !== `#${tabName}`) {
+      window.location.hash = `#${tabName}`;
+    }
 
     // Update nav icons
     document.querySelectorAll('.bottom-nav .nav-item').forEach(el => {
@@ -412,7 +493,7 @@ const MessApp = {
 
     if (inputExtra) {
       inputExtra.addEventListener('input', () => {
-        const val = Number(inputExtra.value) || 0;
+        const val = Math.max(0, Number(inputExtra.value) || 0);
         this.updateCurrentRecord({ extraCharge: val });
         this.updateTodayCostSummary();
       });
@@ -452,7 +533,8 @@ const MessApp = {
     if (dateKey === todayStr) {
       relativeLabel = 'Today';
     } else {
-      const diffDays = Math.round((d - new Date(todayStr)) / (1000 * 60 * 60 * 24));
+      const todayObj = this.parseDateKey(todayStr);
+      const diffDays = Math.round((d.getTime() - todayObj.getTime()) / 86400000);
       if (diffDays === -1) relativeLabel = 'Yesterday';
       else if (diffDays === 1) relativeLabel = 'Tomorrow';
       else relativeLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
@@ -664,9 +746,8 @@ const MessApp = {
 
   /* ------------------- ANALYTICS & BILL VIEW ------------------- */
   updateAnalyticsView() {
-    const now = new Date();
-    const curYear = window.MessCalendar ? window.MessCalendar.currentYear : now.getFullYear();
-    const curMonth = window.MessCalendar ? window.MessCalendar.currentMonth : (now.getMonth() + 1);
+    const curYear = this.analyticsYear;
+    const curMonth = this.analyticsMonth;
 
     const stats = MessStats.calculateMonthlyStats(curYear, curMonth, this.records, this.settings);
     const curr = this.settings.currency || '₹';
@@ -676,14 +757,18 @@ const MessApp = {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
-    // Hero card
+    const monthStr = `${monthNames[curMonth - 1]} ${curYear}`;
+
+    // Top selector title and Hero card
+    const selectorTitle = document.getElementById('analytics-month-title');
     const heroMonth = document.getElementById('analytics-month-label');
     const heroAmount = document.getElementById('analytics-total-amount');
     const heroEatenDays = document.getElementById('analytics-eaten-days');
     const heroLeaveDays = document.getElementById('analytics-leave-days');
     const heroMealsTotal = document.getElementById('analytics-total-meals');
 
-    if (heroMonth) heroMonth.textContent = `${monthNames[curMonth - 1]} ${curYear}`;
+    if (selectorTitle) selectorTitle.textContent = monthStr;
+    if (heroMonth) heroMonth.textContent = monthStr;
     if (heroAmount) heroAmount.textContent = `${curr}${stats.totalPayable.toLocaleString()}`;
     if (heroEatenDays) heroEatenDays.textContent = `${stats.daysWithMeals} Days`;
     if (heroLeaveDays) heroLeaveDays.textContent = `${stats.leaveDaysCount} Days`;
@@ -785,10 +870,10 @@ const MessApp = {
         this.settings.roomNo = inRoomNo.value.trim() || '';
         this.settings.currency = inCurrency.value.trim() || '₹';
 
-        this.settings.mealRates.breakfast = Number(inRateB.value) || 0;
-        this.settings.mealRates.lunch = Number(inRateL.value) || 0;
-        this.settings.mealRates.snacks = Number(inRateS.value) || 0;
-        this.settings.mealRates.dinner = Number(inRateD.value) || 0;
+        this.settings.mealRates.breakfast = Math.max(0, Number(inRateB.value) || 0);
+        this.settings.mealRates.lunch = Math.max(0, Number(inRateL.value) || 0);
+        this.settings.mealRates.snacks = Math.max(0, Number(inRateS.value) || 0);
+        this.settings.mealRates.dinner = Math.max(0, Number(inRateD.value) || 0);
 
         this.saveSettings();
 
@@ -797,6 +882,12 @@ const MessApp = {
         if (subtitle) subtitle.textContent = this.settings.messName;
 
         this.loadDayRecord(this.currentDateKey);
+        if (window.MessCalendar) {
+          window.MessCalendar.render();
+        }
+        if (this.activeTab === 'analytics') {
+          this.updateAnalyticsView();
+        }
         this.showToast('Settings saved successfully!', 'success');
       });
     }
@@ -937,10 +1028,12 @@ const MessApp = {
       btnClear.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear all meal records? This cannot be undone.')) {
           this.records = {};
+          localStorage.setItem('messtrack_initialized', 'true');
           this.saveRecords();
           this.loadDayRecord(this.currentDateKey);
           this.setupWeekStrip();
           if (window.MessCalendar) window.MessCalendar.render();
+          if (this.activeTab === 'analytics') this.updateAnalyticsView();
           this.showToast('All meal records cleared.', 'error');
         }
       });
