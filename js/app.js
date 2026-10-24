@@ -241,6 +241,30 @@ const MessApp = {
         if (installBanner) installBanner.style.display = 'none';
       });
     }
+
+    // Check & trigger app updates
+    const btnCheckUpdate = document.getElementById('btn-check-update');
+    if (btnCheckUpdate) {
+      btnCheckUpdate.addEventListener('click', async () => {
+        this.showToast('Checking for updates...', 'info');
+        if ('serviceWorker' in navigator) {
+          try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const reg of registrations) {
+              await reg.update();
+            }
+          } catch (e) {
+            console.log('Update check error:', e);
+          }
+        }
+        setTimeout(() => {
+          this.showToast('Updated to latest version! Refreshing...', 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 600);
+        }, 800);
+      });
+    }
   },
 
   applyTheme(theme) {
