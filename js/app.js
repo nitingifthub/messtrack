@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
 const MessApp = {
   settings: {},
   records: {},
+  payments: [],
   currentDate: new Date(),
   currentDateKey: '',
   activeTab: 'today',
@@ -29,6 +30,7 @@ const MessApp = {
   init() {
     this.loadSettings();
     this.loadRecords();
+    this.loadPayments();
     this.applyTheme(this.settings.theme || 'dark');
     this.currentDateKey = this.formatDateKey(this.currentDate);
 
@@ -112,6 +114,50 @@ const MessApp = {
     }
   },
 
+  loadPayments() {
+    try {
+      const stored = localStorage.getItem('messtrack_payments');
+      this.payments = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(this.payments)) this.payments = [];
+    } catch (e) {
+      this.payments = [];
+    }
+  },
+
+  savePayments() {
+    try {
+      localStorage.setItem('messtrack_payments', JSON.stringify(this.payments));
+      this.updateAutoSaveIndicator();
+      this.saveToOPFS();
+      this.saveToLinkedFolder();
+    } catch (e) {
+      console.error('Error saving payments', e);
+    }
+  },
+
+  recordPayment(payment) {
+    if (!payment || !payment.amount || Number(payment.amount) <= 0) return false;
+    this.payments.push(payment);
+    this.savePayments();
+    if (this.activeTab === 'analytics') {
+      this.updateAnalyticsView();
+    }
+    this.showToast(`Payment of ${this.settings.currency || '₹'}${Number(payment.amount).toLocaleString()} recorded!`, 'success');
+    return true;
+  },
+
+  deletePayment(paymentId) {
+    const idx = this.payments.findIndex(p => p.id === paymentId);
+    if (idx !== -1) {
+      this.payments.splice(idx, 1);
+      this.savePayments();
+      if (this.activeTab === 'analytics') {
+        this.updateAnalyticsView();
+      }
+      this.showToast('Payment removed. Dues updated.', 'info');
+    }
+  },
+
   async saveToLinkedFolder() {
     try {
       const handle = await this.getStoredDirectoryHandle();
@@ -125,7 +171,8 @@ const MessApp = {
           appName: 'MessTrack',
           lastAutoSaved: new Date().toISOString(),
           settings: this.settings,
-          records: this.records
+          records: this.records,
+          payments: this.payments
         };
         await writable.write(JSON.stringify(data, null, 2));
         await writable.close();
@@ -176,7 +223,8 @@ const MessApp = {
           appName: 'MessTrack',
           updatedAt: new Date().toISOString(),
           settings: this.settings,
-          records: this.records
+          records: this.records,
+          payments: this.payments
         };
         await writable.write(JSON.stringify(data, null, 2));
         await writable.close();
@@ -773,7 +821,7 @@ const MessApp = {
     const curYear = this.analyticsYear;
     const curMonth = this.analyticsMonth;
 
-    const stats = MessStats.calculateMonthlyStats(curYear, curMonth, this.records, this.settings);
+    const stats = MessStats.calculateMonthlyStats(curYear, curMonth, this.records, this.settings, this.payments);
     const curr = this.settings.currency || '₹';
 
     const monthNames = [
@@ -786,17 +834,61 @@ const MessApp = {
     // Top selector title and Hero card
     const selectorTitle = document.getElementById('analytics-month-title');
     const heroMonth = document.getElementById('analytics-month-label');
-    const heroAmount = document.getElementById('analytics-total-amount');
+    const heroDueAmount = document.getElementById('analytics-due-amount');
+    const heroTotalBilled = document.getElementById('analytics-total-amount');
+    const heroTotalPaid = document.getElementById('analytics-total-paid');
     const heroEatenDays = document.getElementById('analytics-eaten-days');
-    const heroLeaveDays = document.getElementById('analytics-leave-days');
-    const heroMealsTotal = document.getElementById('analytics-total-meals');
+    const heroStatusBadge = document.getElementById('analytics-status-badge');
+    const heroDueCaption = document.getElementById('analytics-due-caption');
+    const btnPaymentText = document.getElementById('btn-payment-text');
+    const btnOpenPaymentModal = document.getElementById('btn-open-payment-modal');
 
     if (selectorTitle) selectorTitle.textContent = monthStr;
     if (heroMonth) heroMonth.textContent = monthStr;
-    if (heroAmount) heroAmount.textContent = `${curr}${stats.totalPayable.toLocaleString()}`;
-    if (heroEatenDays) heroEatenDays.textContent = `${stats.daysWithMeals} Days`;
-    if (heroLeaveDays) heroLeaveDays.textContent = `${stats.leaveDaysCount} Days`;
-    if (heroMealsTotal) heroMealsTotal.textContent = `${stats.totalMealsCount}`;
+    if (heroDueAmount) heroDueAmount.textContent = `${curr}${stats.amountDue.toLocaleString()}`;
+    if (heroTotalBilled) heroTotalBilled.textContent = `${curr}${stats.totalPayable.toLocaleString()}`;
+    if (heroTotalPaid) heroTotalPaid.textContent = `${curr}${stats.totalPaid.toLocaleString()}`;
+    if (heroEatenDays) heroEatenDays.textContent = `${stats.daysWithMeals} Days (${stats.totalMealsCount} meals)`;
+
+    // Status Badge & Caption
+    if (heroStatusBadge) {
+      if (stats.totalPayable === 0) {
+        heroStatusBadge.textContent = '⚪ No Bill';
+        heroStatusBadge.className = 'hero-status-badge clear';
+      } else if (stats.isFullyPaid) {
+        heroStatusBadge.textContent = '🟢 Paid in Full';
+        heroStatusBadge.className = 'hero-status-badge paid';
+      } else {
+        heroStatusBadge.textContent = `🟠 Due: ${curr}${stats.amountDue.toLocaleString()}`;
+        heroStatusBadge.className = 'hero-status-badge pending';
+      }
+    }
+
+    if (heroDueCaption) {
+      if (stats.isFullyPaid) {
+        heroDueCaption.textContent = 'Bill cleared in full! New meals added will calculate new dues.';
+      } else if (stats.totalPaid > 0) {
+        heroDueCaption.textContent = `Paid ${curr}${stats.totalPaid.toLocaleString()} so far. Due from remaining & new entries.`;
+      } else {
+        heroDueCaption.textContent = 'Calculated from unpaid meals & new entries';
+      }
+    }
+
+    // Mark Payment Done action button
+    if (btnOpenPaymentModal) {
+      if (stats.isFullyPaid) {
+        btnOpenPaymentModal.classList.add('all-paid');
+        if (btnPaymentText) btnPaymentText.textContent = '💳 Record Additional Payment';
+      } else {
+        btnOpenPaymentModal.classList.remove('all-paid');
+        if (btnPaymentText) {
+          btnPaymentText.textContent = stats.amountDue > 0
+            ? `💳 Mark Payment Done (${curr}${stats.amountDue.toLocaleString()})`
+            : '💳 Mark Payment Done';
+        }
+      }
+      btnOpenPaymentModal.onclick = () => this.openPaymentModal(stats);
+    }
 
     // Attendance Bar
     const pctLabel = document.getElementById('analytics-attendance-pct');
@@ -820,11 +912,134 @@ const MessApp = {
     setMetric('snacks', stats.snacksCount, stats.snacksCost);
     setMetric('dinner', stats.dinnerCount, stats.dinnerCost);
 
+    // Render Payment History Card
+    const historyList = document.getElementById('payment-history-list');
+    const historyCount = document.getElementById('payment-history-count');
+    if (historyCount) {
+      const pCount = (stats.monthPayments || []).length;
+      historyCount.textContent = `${pCount} Payment${pCount === 1 ? '' : 's'}`;
+    }
+
+    if (historyList) {
+      if (!stats.monthPayments || stats.monthPayments.length === 0) {
+        historyList.innerHTML = `
+          <div class="payment-empty-state">
+            No payments recorded for ${monthNames[curMonth - 1]} yet.<br>
+            Tap <strong>Mark Payment Done</strong> above when you make a payment!
+          </div>
+        `;
+      } else {
+        historyList.innerHTML = stats.monthPayments.map(p => `
+          <div class="payment-item">
+            <div class="payment-item-left">
+              <div class="payment-item-amount">+${curr}${(Number(p.amount) || 0).toLocaleString()}</div>
+              <div class="payment-item-meta">📅 ${p.date || 'N/A'} • ${MessStats.escapeHTML(p.mode || 'Payment')}</div>
+              ${p.note ? `<div class="payment-item-note">"${MessStats.escapeHTML(p.note)}"</div>` : ''}
+            </div>
+            <button class="btn-delete-payment" data-id="${p.id}" title="Undo / Delete Payment">
+              🗑️ Undo
+            </button>
+          </div>
+        `).join('');
+
+        historyList.querySelectorAll('.btn-delete-payment').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            if (confirm('Undo / remove this recorded payment receipt? The amount will return to your pending dues.')) {
+              this.deletePayment(id);
+            }
+          };
+        });
+      }
+    }
+
     // Setup Generate Slip Button
     const btnGenerate = document.getElementById('btn-generate-slip');
     if (btnGenerate) {
       btnGenerate.onclick = () => this.showMessSlip(stats);
     }
+  },
+
+  openPaymentModal(stats) {
+    const modal = document.getElementById('payment-modal');
+    if (!modal) return;
+
+    const dueDisplay = document.getElementById('modal-due-display');
+    const inAmount = document.getElementById('pay-input-amount');
+    const inDate = document.getElementById('pay-input-date');
+    const inMode = document.getElementById('pay-select-mode');
+    const inNote = document.getElementById('pay-input-note');
+    const btnPayFull = document.getElementById('btn-pay-full-due');
+    const btnClose = document.getElementById('btn-close-payment-modal');
+    const btnConfirm = document.getElementById('btn-confirm-payment');
+
+    const curr = this.settings.currency || '₹';
+
+    if (dueDisplay) {
+      dueDisplay.textContent = `${curr}${stats.amountDue.toLocaleString()}`;
+    }
+
+    const defaultAmount = stats.amountDue > 0 ? stats.amountDue : (stats.totalPayable > 0 ? stats.totalPayable : '');
+    if (inAmount) inAmount.value = defaultAmount;
+
+    // Default payment date to today, or end of active month if viewing past month
+    const today = new Date();
+    if (inDate) {
+      if (this.analyticsYear === today.getFullYear() && this.analyticsMonth === (today.getMonth() + 1)) {
+        inDate.value = this.formatDateKey(today);
+      } else {
+        const lastDay = new Date(this.analyticsYear, this.analyticsMonth, 0).getDate();
+        inDate.value = `${this.analyticsYear}-${String(this.analyticsMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      }
+    }
+
+    if (inNote) inNote.value = '';
+
+    if (btnPayFull) {
+      btnPayFull.onclick = () => {
+        if (inAmount) inAmount.value = stats.amountDue;
+      };
+    }
+
+    const closeModal = () => modal.classList.remove('show');
+    if (btnClose) btnClose.onclick = closeModal;
+
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
+
+    if (btnConfirm) {
+      btnConfirm.onclick = () => {
+        const amount = Number(inAmount.value);
+        if (isNaN(amount) || amount <= 0) {
+          alert('Please enter a valid payment amount greater than 0.');
+          if (inAmount) inAmount.focus();
+          return;
+        }
+
+        const dateVal = inDate.value || this.formatDateKey(new Date());
+        const [py, pm] = dateVal.split('-').map(Number);
+        const modeVal = inMode ? inMode.value : 'UPI';
+        const noteVal = inNote ? inNote.value.trim() : '';
+
+        const payment = {
+          id: 'pay_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          year: py,
+          month: pm,
+          date: dateVal,
+          amount: amount,
+          mode: modeVal,
+          note: noteVal,
+          paidAt: new Date().toISOString()
+        };
+
+        this.recordPayment(payment);
+        closeModal();
+      };
+    }
+
+    modal.classList.add('show');
   },
 
   showMessSlip(stats) {
@@ -964,7 +1179,8 @@ const MessApp = {
           appName: 'MessTrack',
           exportedAt: new Date().toISOString(),
           settings: this.settings,
-          records: this.records
+          records: this.records,
+          payments: this.payments
         };
         const jsonContent = JSON.stringify(backup, null, 2);
         const fileName = `messtrack_backup_${this.formatDateKey(new Date())}.json`;
@@ -1020,6 +1236,10 @@ const MessApp = {
               this.records = data.records;
               this.saveRecords();
             }
+            if (data.payments && Array.isArray(data.payments)) {
+              this.payments = data.payments;
+              this.savePayments();
+            }
             if (data.settings) {
               this.settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
               this.saveSettings();
@@ -1027,7 +1247,8 @@ const MessApp = {
             this.loadDayRecord(this.currentDateKey);
             this.setupWeekStrip();
             if (window.MessCalendar) window.MessCalendar.render();
-            this.showToast('Data imported successfully!', 'success');
+            if (this.activeTab === 'analytics') this.updateAnalyticsView();
+            this.showToast('Data & payment records imported successfully!', 'success');
           } catch (err) {
             alert('Invalid backup file. Could not parse JSON.');
           }
@@ -1050,15 +1271,17 @@ const MessApp = {
     const btnClear = document.getElementById('btn-clear-data');
     if (btnClear) {
       btnClear.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear all meal records? This cannot be undone.')) {
+        if (confirm('Are you sure you want to clear all meal & payment records? This cannot be undone.')) {
           this.records = {};
+          this.payments = [];
           localStorage.setItem('messtrack_initialized', 'true');
           this.saveRecords();
+          this.savePayments();
           this.loadDayRecord(this.currentDateKey);
           this.setupWeekStrip();
           if (window.MessCalendar) window.MessCalendar.render();
           if (this.activeTab === 'analytics') this.updateAnalyticsView();
-          this.showToast('All meal records cleared.', 'error');
+          this.showToast('All meal and payment records cleared.', 'error');
         }
       });
     }

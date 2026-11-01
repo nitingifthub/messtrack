@@ -1003,6 +1003,204 @@ html, body {
   font-weight: 700;
 }
 
+/* Payment Status Badges & Hero Subtitles */
+.hero-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.hero-status-badge.pending {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.hero-status-badge.paid {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.hero-status-badge.clear {
+  background: rgba(255, 255, 255, 0.12);
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-amount-wrapper {
+  margin-bottom: 12px;
+}
+
+.hero-due-caption {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+  margin-top: -8px;
+}
+
+/* Mark Payment Done Action Button */
+.btn-payment-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-payment-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+}
+
+.btn-payment-action:active {
+  transform: translateY(0);
+}
+
+.btn-payment-action.all-paid {
+  background: linear-gradient(135deg, #27272a 0%, #18181b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #34d399;
+  box-shadow: none;
+}
+
+/* Payment Due Highlight (in Modal) */
+.payment-due-highlight {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.payment-due-highlight .due-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.payment-due-highlight .due-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #10b981;
+  margin: 4px 0;
+}
+
+.payment-due-highlight .due-tip {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Payment History Card */
+.payment-history-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.payment-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.payment-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.payment-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.payment-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-item-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.payment-item-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.payment-item-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.btn-delete-payment {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-delete-payment:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.payment-empty-state {
+  text-align: center;
+  padding: 14px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 /* Attendance Progress Bar */
 .attendance-card {
   background: var(--bg-card);

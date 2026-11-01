@@ -23,7 +23,7 @@ const MessStats = {
    * @param {Object} records - Map of 'YYYY-MM-DD' -> meal record
    * @param {Object} settings - Mess settings
    */
-  calculateMonthlyStats(year, month, records, settings) {
+  calculateMonthlyStats(year, month, records, settings, payments = []) {
     const daysInMonth = new Date(year, month, 0).getDate();
     const prefix = `${year}-${String(month).padStart(2, '0')}`;
     const rates = (settings && settings.mealRates) || { breakfast: 30, lunch: 60, snacks: 25, dinner: 65 };
@@ -121,6 +121,26 @@ const MessStats = {
     const totalPayable = totalMealsCost + totalExtraCharges;
     const attendancePct = daysInMonth > 0 ? Math.round((daysWithMeals / daysInMonth) * 100) : 0;
 
+    // Filter payments for this specific month & year
+    const monthPayments = (payments || []).filter(p => {
+      if (p.year && p.month) {
+        return Number(p.year) === Number(year) && Number(p.month) === Number(month);
+      }
+      if (p.date) {
+        const parts = String(p.date).split('-');
+        if (parts.length >= 2) {
+          return Number(parts[0]) === Number(year) && Number(parts[1]) === Number(month);
+        }
+      }
+      return false;
+    });
+
+    const totalPaid = monthPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    // Amount to be paid: automatically reflects charges from entries not yet covered by payments!
+    const amountDue = Math.max(0, totalPayable - totalPaid);
+    const isFullyPaid = totalPayable > 0 && amountDue === 0;
+    const advanceAmount = totalPaid > totalPayable ? (totalPaid - totalPayable) : 0;
+
     return {
       year,
       month,
@@ -139,6 +159,11 @@ const MessStats = {
       daysWithMeals,
       totalExtraCharges,
       totalPayable,
+      totalPaid,
+      amountDue,
+      isFullyPaid,
+      advanceAmount,
+      monthPayments,
       attendancePct,
       attendedDays
     };
@@ -275,9 +300,35 @@ const MessStats = {
 
         <div class="slip-divider"></div>
 
-        <div class="slip-total-row">
-          <span>NET PAYABLE:</span>
-          <span>${curr}${stats.totalPayable.toLocaleString()}</span>
+        <!-- Payments & Balance Summary -->
+        <div style="margin-top: 8px; margin-bottom: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: #475569;">Total Month Bill:</span>
+            <span style="font-weight: 600;">${curr}${stats.totalPayable.toLocaleString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #059669;">
+            <span>Payments Received:</span>
+            <span style="font-weight: 600;">-${curr}${stats.totalPaid.toLocaleString()}</span>
+          </div>
+          ${stats.monthPayments && stats.monthPayments.length > 0 ? `
+            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1; font-size: 11px; color: #64748b;">
+              ${stats.monthPayments.map(p => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                  <span>💳 ${p.date || ''} (${this.escapeHTML(p.mode || 'Payment')})${p.note ? ' - ' + this.escapeHTML(p.note) : ''}:</span>
+                  <span>${curr}${(Number(p.amount) || 0).toLocaleString()}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="slip-total-row" style="background: ${stats.isFullyPaid ? '#ecfdf5' : '#fef2f2'}; border: 1.5px solid ${stats.isFullyPaid ? '#10b981' : '#f87171'}; border-radius: 6px; padding: 10px 14px;">
+          <span style="font-weight: 800; color: ${stats.isFullyPaid ? '#047857' : '#b91c1c'}; font-size: 13px;">
+            ${stats.isFullyPaid ? 'STATUS: PAID IN FULL ✓' : 'TOTAL TO BE PAID (DUE):'}
+          </span>
+          <span style="font-size: 18px; font-weight: 800; color: ${stats.isFullyPaid ? '#047857' : '#b91c1c'};">
+            ${curr}${stats.amountDue.toLocaleString()}
+          </span>
         </div>
 
         <div class="slip-sign-row">
@@ -325,7 +376,10 @@ const MessStats = {
 - Total Meals: ${stats.totalMealsCount}
 ${datesAttendedList}
 
-💰 *TOTAL PAYABLE: ${curr}${stats.totalPayable}*
+💰 *Total Month Bill:* ${curr}${stats.totalPayable.toLocaleString()}
+💳 *Total Paid:* ${curr}${stats.totalPaid.toLocaleString()}
+📌 *Total To Be Paid:* ${curr}${stats.amountDue.toLocaleString()} ${stats.isFullyPaid ? '✅ (PAID IN FULL)' : '🟠 (PENDING)'}
+
 Generated with MessTrack App`;
   }
 };

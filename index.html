@@ -323,30 +323,45 @@
         <button id="analytics-btn-today" class="btn-cal-today" title="Jump to Current Month">This Month</button>
       </div>
 
-      <!-- Hero Monthly Bill Card -->
+      <!-- Hero Monthly Bill & Payment Due Card -->
       <div class="bill-hero-card">
         <div class="bill-hero-top">
-          <span class="hero-label">Estimated Mess Bill</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="hero-label">Amount To Be Paid</span>
+            <span id="analytics-status-badge" class="hero-status-badge pending">🟠 Due</span>
+          </div>
           <span id="analytics-month-label" class="hero-month">October 2026</span>
         </div>
 
-        <div id="analytics-total-amount" class="hero-total-amount">₹3,450</div>
+        <div class="hero-amount-wrapper">
+          <div id="analytics-due-amount" class="hero-total-amount">₹0</div>
+          <div id="analytics-due-caption" class="hero-due-caption">Calculated from unpaid meals & new entries</div>
+        </div>
 
         <div class="hero-breakdown-row">
           <div class="hero-mini-stat">
-            <span>Mess Days</span>
-            <span id="analytics-eaten-days">22 Days</span>
+            <span>Total Bill</span>
+            <span id="analytics-total-amount">₹0</span>
           </div>
           <div class="hero-mini-stat">
-            <span>Mess Leaves</span>
-            <span id="analytics-leave-days">3 Days</span>
+            <span>Total Paid</span>
+            <span id="analytics-total-paid" style="color: #10b981;">₹0</span>
           </div>
           <div class="hero-mini-stat">
-            <span>Total Meals</span>
-            <span id="analytics-total-meals">68</span>
+            <span>Meals Eaten</span>
+            <span id="analytics-eaten-days">0 Days</span>
           </div>
         </div>
       </div>
+
+      <!-- Mark Payment Done CTA Button -->
+      <button id="btn-open-payment-modal" class="btn-payment-action">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+        <span id="btn-payment-text">💳 Mark Payment Done</span>
+      </button>
 
       <!-- Attendance Percentage Progress -->
       <div class="attendance-card">
@@ -406,6 +421,20 @@
           <div id="metric-cst-dinner" class="metric-cost">₹1,170</div>
         </div>
 
+      </div>
+
+      <!-- Payment History Card -->
+      <div class="payment-history-card">
+        <div class="payment-history-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">💳</span>
+            <span style="font-weight: 700; font-size: 14px;">Payments Recorded</span>
+          </div>
+          <span id="payment-history-count" class="payment-count-badge">0 Payments</span>
+        </div>
+        <div id="payment-history-list" class="payment-history-list">
+          <!-- Dynamic payment items rendered by MessApp -->
+        </div>
       </div>
 
       <!-- Generate Bill Slip CTA -->
@@ -667,6 +696,63 @@
           <span>📤 Share Slip</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 3: PAYMENT DONE MODAL (BOTTOM SHEET)
+       ==================================================================== -->
+  <div id="payment-modal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="sheet-drag-handle"></div>
+
+      <div class="sheet-header">
+        <h2>Record Mess Payment</h2>
+        <button id="btn-close-payment-modal" class="btn-close-modal" title="Close">✕</button>
+      </div>
+
+      <!-- Current Amount To Be Paid Highlight Box -->
+      <div class="payment-due-highlight">
+        <div class="due-label">Current Amount To Be Paid:</div>
+        <div id="modal-due-display" class="due-value">₹0</div>
+        <div class="due-tip">Once paid, new entries added later will automatically start calculating the next pending amount!</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+        <div class="input-group">
+          <label for="pay-input-amount">Payment Amount (₹) *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" id="pay-input-amount" class="styled-input" placeholder="0" min="1" step="any" required>
+            <button type="button" id="btn-pay-full-due" class="btn-secondary" style="white-space: nowrap; font-size: 13px; font-weight: 700; padding: 0 14px; background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.4); color: var(--primary-light);">
+              Pay Full Due
+            </button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="pay-input-date">Payment Date *</label>
+          <input type="date" id="pay-input-date" class="styled-input" required>
+        </div>
+
+        <div class="input-group">
+          <label for="pay-select-mode">Payment Mode</label>
+          <select id="pay-select-mode" class="styled-input" style="background-color: var(--bg-card); color: var(--text-primary); cursor: pointer;">
+            <option value="UPI (GPay / PhonePe / Paytm)">UPI (GPay / PhonePe / Paytm)</option>
+            <option value="Cash">Cash</option>
+            <option value="Bank Transfer (NEFT/IMPS)">Bank Transfer (NEFT/IMPS)</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="pay-input-note">Reference / Note (Optional)</label>
+          <input type="text" id="pay-input-note" class="styled-input" placeholder="e.g. Paid to Mess Owner / Txn ID">
+        </div>
+      </div>
+
+      <button id="btn-confirm-payment" class="btn-save-settings" style="margin-top: 0; background: #10b981;">
+        <span>✅ Confirm Payment Done</span>
+      </button>
     </div>
   </div>
 
